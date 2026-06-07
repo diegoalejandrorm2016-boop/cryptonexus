@@ -1,0 +1,5 @@
+.venv/
+.env
+crypto_platform.db
+media/
+__pycache__/

@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Iniciar sesión — CryptoNexus{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card bg-dark border-secondary">
+            <div class="card-body p-4">
+                <h3 class="text-white text-center mb-4">
+                    <i class="fa-solid fa-lock text-warning"></i> Iniciar sesión
+                </h3>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label text-secondary">{{ form.username.label }}</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-secondary">{{ form.password.label }}</label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                            <div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger py-2">{{ form.non_field_errors.0 }}</div>
+                    {% endif %}
+
+                    <button type="submit" class="btn btn-warning w-100 fw-bold mt-2">
+                        Entrar
+                    </button>
+                </form>
+
+                <hr class="border-secondary">
+                <p class="text-center text-secondary mb-0">
+                    ¿No tienes cuenta?
+                    <a href="{% url 'register' %}" class="text-warning">Regístrate gratis</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

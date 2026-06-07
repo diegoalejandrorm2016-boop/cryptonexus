@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"></head>
+<body style="font-family:Arial,sans-serif;background:#111;color:#eee;padding:30px;">
+    <div style="max-width:500px;margin:0 auto;background:#1a1a1a;border-radius:10px;padding:30px;border:1px solid #333;">
+        <h2 style="color:#f0b90b;margin-top:0;">
+            ₿ CryptoNexus — {{ action }} confirmada
+        </h2>
+        <p>Hola <strong>{{ user.username }}</strong>,</p>
+        <p>Tu operación fue procesada exitosamente:</p>
+        <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+            <tr style="border-bottom:1px solid #333;">
+                <td style="padding:8px;color:#aaa;">Tipo</td>
+                <td style="padding:8px;font-weight:bold;
+                    color:{% if transaction.type == 'buy' %}#26a69a{% else %}#ef5350{% endif %};">
+                    {{ action }}
+                </td>
+            </tr>
+            <tr style="border-bottom:1px solid #333;">
+                <td style="padding:8px;color:#aaa;">Criptomoneda</td>
+                <td style="padding:8px;color:#f0b90b;font-weight:bold;">{{ transaction.symbol }}</td>
+            </tr>
+            <tr style="border-bottom:1px solid #333;">
+                <td style="padding:8px;color:#aaa;">Cantidad</td>
+                <td style="padding:8px;color:#fff;">{{ transaction.quantity }}</td>
+            </tr>
+            <tr style="border-bottom:1px solid #333;">
+                <td style="padding:8px;color:#aaa;">Precio</td>
+                <td style="padding:8px;color:#fff;">${{ transaction.price }}</td>
+            </tr>
+            <tr>
+                <td style="padding:8px;color:#aaa;">Total</td>
+                <td style="padding:8px;color:#fff;font-weight:bold;font-size:1.1em;">${{ transaction.total }}</td>
+            </tr>
+        </table>
+        <p style="color:#aaa;font-size:.85em;margin-top:20px;">
+            © CryptoNexus  
+        </p>
+    </div>
+</body>
+</html>

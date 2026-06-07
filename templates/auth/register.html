@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Crear cuenta — CryptoNexus{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card bg-dark border-secondary">
+            <div class="card-body p-4">
+                <h3 class="text-white text-center mb-1">
+                    <i class="fa-solid fa-user-plus text-warning"></i> Crear cuenta
+                </h3>
+                <p class="text-center text-secondary small mb-4">Empieza con $10,000 USD demo</p>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label text-secondary">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small mt-1">{{ field.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger py-2">{{ form.non_field_errors.0 }}</div>
+                    {% endif %}
+
+                    <button type="submit" class="btn btn-warning w-100 fw-bold mt-2">
+                        <i class="fa-solid fa-rocket"></i> Crear cuenta
+                    </button>
+                </form>
+
+                <hr class="border-secondary">
+                <p class="text-center text-secondary mb-0">
+                    ¿Ya tienes cuenta?
+                    <a href="{% url 'login' %}" class="text-warning">Inicia sesión</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

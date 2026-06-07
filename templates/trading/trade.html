@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% block title %}{{ symbol }} — Trading — CryptoNexus{% endblock %}
+
+{% block extra_css %}
+<style>
+#chart { min-height: 380px; background: #111; border-radius: 8px; }
+.symbol-pill { cursor: pointer; transition: .2s; }
+.symbol-pill:hover { background: #f0b90b !important; color: #000 !important; }
+.symbol-pill.active { background: #f0b90b !important; color: #000 !important; font-weight: bold; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <!-- Selector de cripto -->
+    <div class="mb-3 d-flex flex-wrap gap-2">
+        {% for sym in symbols %}
+        <a href="{% url 'trade' %}?symbol={{ sym }}"
+           class="badge symbol-pill text-decoration-none fs-6 px-3 py-2
+                  {% if sym == symbol %}active bg-warning text-dark{% else %}bg-secondary text-white{% endif %}">
+            {{ sym|slice:":-4" }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <div class="row g-4">
+        <!-- Gráfica + info -->
+        <div class="col-lg-8">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-warning fw-bold fs-5">{{ symbol }}</span>
+                        <span class="text-white fs-4 ms-3 fw-bold" id="live-price">
+                            {% if price %}${{ price|floatformat:4 }}{% else %}—{% endif %}
+                        </span>
+                    </div>
+                    <div class="btn-group btn-group-sm" id="period-btns">
+                        {% for p, label in periods.items %}
+                        <button class="btn btn-outline-secondary {% if forloop.first %}active{% endif %}" data-period="{{ p }}">{{ label }}</button>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="chart"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de trading -->
+        <div class="col-lg-4">
+            <div class="card bg-dark border-secondary mb-3">
+                <div class="card-body">
+                    <h5 class="text-white mb-3">
+                        <i class="fa-solid fa-wallet text-warning"></i> Balance
+                    </h5>
+                    <div class="d-flex justify-content-between text-secondary mb-1">
+                        <span>Disponible:</span>
+                        <span class="text-warning fw-bold">${{ balance|floatformat:2 }} USD</span>
+                    </div>
+                    <div class="d-flex justify-content-between text-secondary">
+                        <span>En {{ symbol|slice:":-4" }}:</span>
+                        <span class="text-white">{{ position_qty|floatformat:6 }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Compra -->
+            <div class="card bg-dark border-secondary mb-3">
+                <div class="card-header border-secondary text-success fw-bold">
+                    <i class="fa-solid fa-arrow-trend-up"></i> Comprar {{ symbol|slice:":-4" }}
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'buy' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="symbol" value="{{ symbol }}">
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small">Cantidad en USD</label>
+                            <input type="number" name="amount" class="form-control bg-secondary border-0 text-white"
+                                   placeholder="0.00" min="1" step="0.01" max="{{ balance }}" required>
+                        </div>
+                        <div class="d-flex gap-2 mb-3">
+                            {% for pct in pct_options %}
+                            <button type="button" class="btn btn-outline-secondary btn-sm flex-fill pct-btn"
+                                    data-pct="{{ pct }}" data-target="buy">{{ pct }}%</button>
+                            {% endfor %}
+                        </div>
+                        <button type="submit" class="btn btn-success w-100 fw-bold">
+                            <i class="fa-solid fa-cart-shopping"></i> Comprar
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Venta -->
+            <div class="card bg-dark border-secondary">
+                <div class="card-header border-secondary text-danger fw-bold">
+                    <i class="fa-solid fa-arrow-trend-down"></i> Vender {{ symbol|slice:":-4" }}
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'sell' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="symbol" value="{{ symbol }}">
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small">Cantidad en {{ symbol|slice:":-4" }}</label>
+                            <input type="number" name="quantity" class="form-control bg-secondary border-0 text-white"
+                                   placeholder="0.000000" min="0.000001" step="any" max="{{ position_qty }}" required>
+                        </div>
+                        <div class="d-flex gap-2 mb-3">
+                            {% for pct in pct_options %}
+                            <button type="button" class="btn btn-outline-secondary btn-sm flex-fill pct-btn"
+                                    data-pct="{{ pct }}" data-target="sell">{{ pct }}%</button>
+                            {% endfor %}
+                        </div>
+                        <button type="submit" class="btn btn-danger w-100 fw-bold"
+                                {% if not position_qty %}disabled{% endif %}>
+                            <i class="fa-solid fa-money-bill-transfer"></i> Vender
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.44.0/apexcharts.min.js"></script>
+<script>
+const SYMBOL  = "{{ symbol }}";
+const BALANCE = {{ balance }};
+const POS_QTY = {{ position_qty }};
+let chart = null;
+let currentPeriod = '1d';
+
+const periodLabels = {'1d':'1D','1w':'1S','1m':'1M','1y':'1A'};
+
+async function loadChart(period) {
+    currentPeriod = period;
+    try {
+        const res = await fetch(`/api/klines/${SYMBOL}/?period=${period}`);
+        const json = await res.json();
+        if (!json.success) return;
+
+        const series = json.data.map(k => ({
+            x: new Date(k.time),
+            y: [k.open, k.high, k.low, k.close]
+        }));
+
+        if (chart) { chart.destroy(); chart = null; }
+
+        chart = new ApexCharts(document.getElementById('chart'), {
+            series: [{ data: series }],
+            chart: { type: 'candlestick', height: 380, background: 'transparent',
+                     toolbar: { show: false }, animations: { enabled: false } },
+            theme: { mode: 'dark' },
+            xaxis: { type: 'datetime', labels: { style: { colors: '#aaa' } } },
+            yaxis: { labels: { style: { colors: '#aaa' }, formatter: v => '$' + v.toLocaleString() } },
+            grid: { borderColor: '#333' },
+            tooltip: { theme: 'dark' },
+            plotOptions: { candlestick: {
+                colors: { upward: '#26a69a', downward: '#ef5350' }
+            }}
+        });
+        chart.render();
+    } catch(e) { console.error(e); }
+}
+
+// Period buttons
+document.getElementById('period-btns').addEventListener('click', e => {
+    const btn = e.target.closest('[data-period]');
+    if (!btn) return;
+    document.querySelectorAll('#period-btns .btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    loadChart(btn.dataset.period);
+});
+
+// % buttons
+document.querySelectorAll('.pct-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const pct = parseFloat(btn.dataset.pct) / 100;
+        const target = btn.dataset.target;
+        if (target === 'buy') {
+            const input = btn.closest('form').querySelector('[name=amount]');
+            input.value = (BALANCE * pct).toFixed(2);
+        } else {
+            const input = btn.closest('form').querySelector('[name=quantity]');
+            input.value = (POS_QTY * pct).toFixed(8);
+        }
+    });
+});
+
+// Live price
+async function updatePrice() {
+    try {
+        const res = await fetch(`/api/price/${SYMBOL}/`);
+        const json = await res.json();
+        if (json.success) {
+            document.getElementById('live-price').textContent = '$' + Number(json.price).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:6});
+        }
+    } catch(e) {}
+}
+
+loadChart('1d');
+updatePrice();
+setInterval(updatePrice, 5000);
+</script>
+{% endblock %}

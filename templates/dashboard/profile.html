@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}Mi Perfil — CryptoNexus{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-white mb-0">
+            <i class="fa-solid fa-user-gear text-warning"></i> Mi perfil
+        </h2>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fa-solid fa-arrow-left"></i> Dashboard
+        </a>
+    </div>
+
+    <div class="card bg-dark border-secondary">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            {% if request.user.profile_photo %}
+                                <img
+                                    src="{{ request.user.profile_photo.url }}"
+                                    alt="Foto de perfil"
+                                    class="rounded-circle"
+                                    style="width:140px;height:140px;object-fit:cover;border:2px solid #f0b90b;"
+                                >
+                            {% else %}
+                                <div
+                                    class="rounded-circle d-inline-flex align-items-center justify-content-center bg-secondary text-white"
+                                    style="width:140px;height:140px;">
+                                    <i class="fa-solid fa-user" style="font-size:3rem;"></i>
+                                </div>
+                            {% endif %}
+                            <div class="mt-3">
+                                <label class="form-label text-secondary">Foto de perfil</label>
+                                {{ form.profile_photo }}
+                                {% if form.profile_photo.errors %}
+                                    <div class="text-danger small mt-1">{{ form.profile_photo.errors.0 }}</div>
+                                {% endif %}
+                                <div class="form-text text-secondary small">
+                                    Sube una imagen (JPG/PNG) y se guardará en el servidor.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-8">
+                        <div class="mb-3">
+                            <label class="form-label text-secondary">Username</label>
+                            {{ form.username }}
+                            {% if form.username.errors %}
+                                <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-secondary">Edad</label>
+                            {{ form.age }}
+                            {% if form.age.errors %}
+                                <div class="text-danger small mt-1">{{ form.age.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-warning fw-bold">
+                                <i class="fa-solid fa-floppy-disk"></i> Guardar cambios
+                            </button>
+                        </div>
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger mt-3 mb-0">
+                                {{ form.non_field_errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — CryptoNexus{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="text-white mb-4">
+        <i class="fa-solid fa-gauge text-warning"></i> Dashboard
+    </h2>
+
+    <!-- Resumen de balance -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card bg-dark border-secondary text-center p-3">
+                <div class="text-secondary small mb-1">Balance disponible</div>
+                <div class="fs-4 fw-bold text-warning">${{ balance|floatformat:2 }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-secondary text-center p-3">
+                <div class="text-secondary small mb-1">Equity total</div>
+                <div class="fs-4 fw-bold text-white">${{ total_equity|floatformat:2 }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-secondary text-center p-3">
+                <div class="text-secondary small mb-1">Valor portafolio</div>
+                <div class="fs-4 fw-bold text-white">${{ total_current|floatformat:2 }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-secondary text-center p-3">
+                <div class="text-secondary small mb-1">P&L total</div>
+                <div class="fs-4 fw-bold {% if total_pnl >= 0 %}text-success{% else %}text-danger{% endif %}">
+                    {% if total_pnl >= 0 %}+{% endif %}${{ total_pnl|floatformat:2 }}
+                    <span class="fs-6">({{ total_pnl_pct|floatformat:2 }}%)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Portafolio -->
+    <div class="card bg-dark border-secondary mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center border-secondary">
+            <h5 class="text-white mb-0">
+                <i class="fa-solid fa-briefcase text-warning"></i> Mi portafolio
+            </h5>
+            <a href="{% url 'trade' %}" class="btn btn-warning btn-sm">
+                <i class="fa-solid fa-plus"></i> Operar
+            </a>
+        </div>
+        <div class="card-body p-0">
+            {% if portfolio %}
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0">
+                    <thead>
+                        <tr class="text-secondary">
+                            <th>Cripto</th>
+                            <th>Cantidad</th>
+                            <th>Precio promedio</th>
+                            <th>Precio actual</th>
+                            <th>Valor actual</th>
+                            <th>P&L</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pos in portfolio %}
+                        <tr>
+                            <td class="fw-bold text-warning">{{ pos.symbol }}</td>
+                            <td class="text-white">{{ pos.quantity|floatformat:6 }}</td>
+                            <td class="text-secondary">${{ pos.avg_buy_price|floatformat:4 }}</td>
+                            <td class="text-white">${{ pos.current_price|floatformat:4 }}</td>
+                            <td class="text-white">${{ pos.current_value|floatformat:2 }}</td>
+                            <td class="{% if pos.pnl >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                {% if pos.pnl >= 0 %}+{% endif %}${{ pos.pnl|floatformat:2 }}
+                                <span class="small">({{ pos.pnl_pct|floatformat:2 }}%)</span>
+                            </td>
+                            <td>
+                                <a href="{% url 'trade' %}?symbol={{ pos.symbol }}" class="btn btn-outline-warning btn-sm">
+                                    Operar
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center text-secondary py-5">
+                <i class="fa-solid fa-wallet fa-3x mb-3"></i>
+                <p>Tu portafolio está vacío. <a href="{% url 'trade' %}" class="text-warning">¡Empieza a operar!</a></p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Últimas transacciones -->
+    <div class="card bg-dark border-secondary">
+        <div class="card-header d-flex justify-content-between align-items-center border-secondary">
+            <h5 class="text-white mb-0">
+                <i class="fa-solid fa-clock-rotate-left text-warning"></i> Últimas operaciones
+            </h5>
+            <a href="{% url 'history' %}" class="btn btn-outline-secondary btn-sm">Ver todo</a>
+        </div>
+        <div class="card-body p-0">
+            {% if recent_transactions %}
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0">
+                    <thead>
+                        <tr class="text-secondary">
+                            <th>Tipo</th><th>Cripto</th><th>Cantidad</th><th>Precio</th><th>Total</th><th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tx in recent_transactions %}
+                        <tr>
+                            <td>
+                                <span class="badge {% if tx.type == 'buy' %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if tx.type == 'buy' %}Compra{% else %}Venta{% endif %}
+                                </span>
+                            </td>
+                            <td class="text-warning fw-bold">{{ tx.symbol }}</td>
+                            <td class="text-white">{{ tx.quantity|floatformat:6 }}</td>
+                            <td class="text-secondary">${{ tx.price|floatformat:4 }}</td>
+                            <td class="text-white">${{ tx.total|floatformat:2 }}</td>
+                            <td class="text-secondary small">{{ tx.timestamp|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-center text-secondary py-4">Sin operaciones aún.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

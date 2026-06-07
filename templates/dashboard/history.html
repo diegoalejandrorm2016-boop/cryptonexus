@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}Historial — CryptoNexus{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-white mb-0">
+            <i class="fa-solid fa-clock-rotate-left text-warning"></i> Historial de operaciones
+        </h2>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fa-solid fa-arrow-left"></i> Dashboard
+        </a>
+    </div>
+
+    <div class="card bg-dark border-secondary">
+        <div class="card-body p-0">
+            {% if page_obj %}
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0">
+                    <thead>
+                        <tr class="text-secondary">
+                            <th>#</th>
+                            <th>Tipo</th>
+                            <th>Cripto</th>
+                            <th>Cantidad</th>
+                            <th>Precio</th>
+                            <th>Total USD</th>
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tx in page_obj %}
+                        <tr>
+                            <td class="text-secondary">{{ tx.id }}</td>
+                            <td>
+                                <span class="badge {% if tx.type == 'buy' %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if tx.type == 'buy' %}Compra{% else %}Venta{% endif %}
+                                </span>
+                            </td>
+                            <td class="text-warning fw-bold">{{ tx.symbol }}</td>
+                            <td class="text-white">{{ tx.quantity|floatformat:8 }}</td>
+                            <td class="text-secondary">${{ tx.price|floatformat:4 }}</td>
+                            <td class="text-white fw-bold">${{ tx.total|floatformat:2 }}</td>
+                            <td class="text-secondary small">{{ tx.timestamp|date:"d/m/Y H:i:s" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            {% if page_obj.has_other_pages %}
+            <nav class="d-flex justify-content-center py-3">
+                <ul class="pagination pagination-sm mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">«</a>
+                    </li>
+                    {% endif %}
+                    {% for num in page_obj.paginator.page_range %}
+                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">»</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center text-secondary py-5">
+                <i class="fa-solid fa-inbox fa-3x mb-3"></i>
+                <p>No has realizado ninguna operación aún.</p>
+                <a href="{% url 'trade' %}" class="btn btn-warning">¡Empieza a operar!</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
